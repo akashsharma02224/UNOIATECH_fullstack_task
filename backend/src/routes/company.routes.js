@@ -18,13 +18,17 @@ router.route("/add").post(
             name: "company_logo",
             maxCount: 1
         },
+        {
+            name: "website_screenshot",
+            maxCount: 1
+        }
     ]),
     addCompany
 );
 
 router.route("/all").get(getCompaniesDetails);
 router.route("/:_id").get(getCompanyDetailById).patch(updateCompanyDetails).delete(deleteComapnyById);
-router.route("/logo/:_id").patch(updateCompanyLogo);
+router.route("/logo/:_id").patch(upload.single("company_logo") ,updateCompanyLogo);
 
 
 module.exports = router;

@@ -11,22 +11,27 @@ const companySchema = new mongoose.Schema({
     },
     company_logo: {
         type: String, // cloudinary/AWS URL
-        // required: true
+        required: true
+    },
+    website_screenshot: {
+        type: String, // cloudinary/AWS URL
+        required: true
     },
     description: {
         type: String,
-        // required: true,
+        required: true,
         trim: true,
         index: true
     },
     address: {
         type: String,
-        // required: true,
+        required: true,
         trim: true,
         index: true
     },
     phone_number: {
         type: Number,
+        required: true,
     },
     email: {
         type: String,

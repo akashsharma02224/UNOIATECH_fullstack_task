@@ -6,13 +6,16 @@ const Company = require("../models/company.model");
 
 const addCompany = asyncHandler ( async (req, resp) => {
     const { company_name, description, address, email, phone_number } = req.body;
+    const { company_logo, website_screenshot } = req.files;
 
     if(
         [company_name, description, address, email, phone_number].some((field) => field?.trim() === "")
     ) {
         throw new ApiError(400, "All Fields are required");
     }
-
+    const companyLogo = company_logo[0]?.buffer;
+    const websiteScreenshot = website_screenshot[0]?.buffer;
+ 
     const existedCompany = await Company.findOne({
         $or: [{ company_name }, { email }, { address }]
     });
@@ -21,37 +24,24 @@ const addCompany = asyncHandler ( async (req, resp) => {
         throw new ApiError(409, "company with email or company_name is already exist");
     }
 
-    console.log("req.file ", req.files);
-    // const companyLogoLocalPath = req.files?.company_logo[0]?.path;
-    const company_logo = await uploadOnCloudinary(req.file.buffer);
-    console.log("logo", company_logo);
+    if(!companyLogo || !websiteScreenshot) {
+        throw new ApiError(400, "Comapny logo and Website Screenshot is required");
+    }
+
+    const companyURL = await uploadOnCloudinary(company_logo[0].buffer);
+    const websiteScreenshotURL = await uploadOnCloudinary(website_screenshot[0].buffer);
+
     
-    // const coverImageLocalPath = req.files?.coverImage[0]?.path;
-
-    // let coverImageLocalPath;
-    // if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
-    //     coverImageLocalPath = req.files.coverImage[0].path;
-    // }
-
-    // if(!companyLogoLocalPath) {
-    //     throw new ApiError(400, "Avatar file is required");
-    // }  
-
-    // const company_logo = await uploadOnCloudinary(companyLogoLocalPath);
-    // const coverImage = await uploadOnCloudinary(coverImageLocalPath);
-
-    // if(!company_logo) {
-    //     throw new ApiError(400, "Avatar file is required");
-    // }
 
     const company = await Company.create({
         company_name,
         email,
-        company_logo: company_logo.url,
-        social_profiles: req.body.social_profiles,
         description,
         address,
         phone_number,
+        company_logo: companyURL.url,
+        social_profiles: req.body.social_profiles,
+        website_screenshot: websiteScreenshotURL.url
 
     });
 
@@ -94,7 +84,6 @@ const getCompanyDetailById = asyncHandler ( async (req, resp) => {
     if(!companyDetail) {
         throw new ApiError(404, "No Record Found");
     }
-    console.log("companyDetails", companyDetail);
     
     return resp.status(201).json(
         new ApiResponse(200,
@@ -108,9 +97,9 @@ const getCompanyDetailById = asyncHandler ( async (req, resp) => {
 const updateCompanyDetails = asyncHandler( async(req, resp) => {
     const { company_name, description, address, email, phone_number } = req.body;
 
-    // if(!company_name || !email || !description || !address) {
-    //     throw new ApiError(400, "All fields are required");
-    // }
+    if(!company_name || !email || !description || !address) {
+        throw new ApiError(400, "All fields are required");
+    }
     const updateFields = {};
     if (company_name) updateFields.company_name = company_name;
     if (email) updateFields.email = email;
@@ -174,7 +163,7 @@ const updateCompanyLogo = asyncHandler( async(req, resp) => {
 });
 
 const deleteComapnyById = asyncHandler ( async (req, resp) => {
-    const company = await Company.findByIdAndDelete(req.params._id);
+    const company = await Company.findByIdAndDelete({ _id: req.params._id });
     if(!company) {
         throw new ApiError(404, "No record found")
     }

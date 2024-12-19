@@ -19,16 +19,10 @@ app.use(bodyParser.json());
 
 // Route Imports
 
-// const userRoute = require("./routes/user.routes");
-// const playListRoute = require("./routes/playList.routes");
-// const videoRoute = require("./routes/video.routes");
 const companyRoute = require("./routes/company.routes");
 
 // Routes Declearation
 
-// app.use("/api/v1/users", userRoute);
-// app.use("/api/v1/playList", playListRoute);
-// app.use("/api/v1/video", videoRoute);
 app.use("/api/v1/company", companyRoute);
 
 // basic route 
