@@ -15,6 +15,7 @@ export const Mainpage = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [search,setSearch] = useState('')
   const [selectedIds, setSelectedIds] = useState([]);
   const [openAddForm, setopenForm] = useState(false);
   const [againGet,setAgainGet]=useState(false);
@@ -134,6 +135,33 @@ export const Mainpage = () => {
     navigate(`/Details/${id}`);
   };
 
+console.log(search,"sea")
+
+  const handleFetch =async ()=>{
+    try {
+      const dataUrl = {
+        url: search
+    }
+      const baseURL = process.env.REACT_APP_API_BASE_URL;
+      const response = await fetch(`${baseURL}/api/v1/company/scrap`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(dataUrl)
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to submit form');
+      }
+      const data = await response.json();
+      console.log('Response:', data);
+      
+    } catch (error) {
+      alert(`Error: ${error.message}`);
+    }
+  }
+
   const handleAddOpen = () => {
     setopenForm(true)
   };
@@ -150,8 +178,10 @@ export const Mainpage = () => {
             <input
               placeholder="Enter domain name"
               className="h-10 p-4 pl-12 w-full sm:w-[400px] rounded-lg bg-gray-100"
+              value={search}
+              onChange={(e)=>setSearch(e.target.value)}
             />
-            <button className="bg-[#EDE5FF] p-2 text-[#6C2BD9] rounded-lg w-full sm:w-[180px] font-bold mt-4 sm:mt-0">
+            <button className="bg-[#EDE5FF] p-2 text-[#6C2BD9] rounded-lg w-full sm:w-[180px] font-bold mt-4 sm:mt-0" onClick={handleFetch}>
               Fetch & Save Details
             </button>
           </div>

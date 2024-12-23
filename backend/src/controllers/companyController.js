@@ -3,6 +3,105 @@ const { ApiError } = require("../utils/ApiError");
 const { uploadOnCloudinary } = require("../utils/cloudinary");
 const ApiResponse = require("../utils/ApiResponse");
 const Company = require("../models/company.model");
+const puppeteer = require('puppeteer');
+const fs = require('fs');
+
+
+const scrapeWebsite =  asyncHandler ( async (req, resp) => {
+    const url = req.body.url;
+    const browser = await puppeteer.launch({ headless: true });
+    const page = await browser.newPage();
+  
+    try {
+      // Navigate to the website
+      await page.goto(url, { waitUntil: 'networkidle2' });
+  
+    const screenshotBuffer = await page.screenshot();
+
+    // Upload the screenshot to Cloudinary
+    const screenshotUpload = await uploadOnCloudinary(screenshotBuffer);
+    const screenshotURL = screenshotUpload ? screenshotUpload.url : null;
+  
+      // Extract title and meta description
+      const title = await page.title();
+      const description = await page.evaluate(() => {
+        const metaDesc = document.querySelector('meta[name="description"]');
+        return metaDesc ? metaDesc.content : 'No description available';
+      });
+  
+      // Extract social links
+      const socialLinks = await page.evaluate(() => {
+        const anchors = Array.from(document.querySelectorAll('a[href]'));
+        return anchors
+          .map((a) => a.href)
+          .filter((link) =>
+            /facebook|twitter|instagram|linkedin|youtube|pinterest/i.test(link)
+          );
+      });
+
+       // Extract email addresses
+       const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+       const pageContent = await page.content();
+       const emailAddresses = [...pageContent.matchAll(emailRegex)].map((match) => match[0]);
+
+    //   Extract logo
+    const logo = await page.evaluate(() => {
+        const logoSelectors = [
+            'img[src*="logo"]', 
+            'img[alt*="logo"]', 
+            'link[rel="icon"]', 
+            'link[rel="shortcut icon"]', 
+        ];
+        for (const selector of logoSelectors) {
+            const element = document.querySelector(selector);
+            if (element) {
+                return element.src || element.href || '';
+            }
+        }
+        return null; // Return null if no logo found
+    });
+
+    const addressRegex = /\d{1,5}\s\w+(\s\w+)*,\s\w+(\s\w+)*,\s\w+(\s\w+)*(\s\d{5})?/g;
+    const addresses = [...pageContent.matchAll(addressRegex)].map((match) => match[0]);
+
+    const phoneRegex = /(\+?\d{1,4}[\s-]?)?(\(?\d{2,3}\)?[\s-]?)?\d{3,4}[\s-]?\d{3,4}/g;
+    const phoneNumbers = [...pageContent.matchAll(phoneRegex)].map((match) => match[0]);
+  
+      // Collect all data
+      const data = {
+        company_name: title,
+        email: emailAddresses[0],
+        description,
+        address: addresses[0],
+        phone_number: phoneNumbers[0],
+        company_logo: logo,
+        social_profiles: [],
+        website_screenshot: screenshotURL,
+      };
+  
+      console.log('Scraped Data:', data);
+      const company = await Company.create(data);
+
+    const createdCompany = await Company.findById(company._id);
+
+    if(!createdCompany) {
+        throw new ApiError(500, "Something went wrong while creating company");
+    }
+
+      return resp.status(201).json(
+        new ApiResponse(200,
+            createdCompany,
+            "fetched details successfully"
+        )
+    )
+
+
+    } catch (error) {
+      console.error('Error scraping the website:', error.message);
+    } finally {
+      await browser.close();
+    }
+  });
 
 const addCompany = asyncHandler ( async (req, resp) => {
     const { company_name, description, address, email, phone_number } = req.body;
@@ -184,5 +283,6 @@ module.exports = {
     getCompanyDetailById,
     updateCompanyDetails,
     updateCompanyLogo,
-    deleteComapnyById
+    deleteComapnyById,
+    scrapeWebsite
 };
