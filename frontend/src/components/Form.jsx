@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { IoMdClose } from 'react-icons/io';
-export default function Form({closeFormpopUp}) {
+export default function Form({closeFormpopUp,setAgainGet}) {
   const [formData, setFormData] = useState({
     logo: null,
     screenshot: null,
@@ -73,7 +73,8 @@ export default function Form({closeFormpopUp}) {
         email: '',
       });
       if(data.statusCode === 200){
-        closeFormpopUp()
+        closeFormpopUp();
+        setAgainGet(true);
       }
     } catch (error) {
       alert(`Error: ${error.message}`);

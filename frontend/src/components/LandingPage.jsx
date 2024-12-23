@@ -17,6 +17,7 @@ export const Mainpage = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [selectedIds, setSelectedIds] = useState([]);
   const [openAddForm, setopenForm] = useState(false);
+  const [againGet,setAgainGet]=useState(false);
 
   const navigate = useNavigate();
 
@@ -52,7 +53,7 @@ export const Mainpage = () => {
         console.error("Error fetching data:", error);
         setLoading(false);
       });
-  }, []);
+  }, [againGet]);
 
   const handlePrevPage = () => {
     if (currentPage > 1) setCurrentPage(currentPage - 1);
@@ -90,9 +91,8 @@ export const Mainpage = () => {
         )
       );
       setSelectedIds([]);
-      fetchData(currentPage);
+      setAgainGet(true);
     } catch (error) {
-      // alert("Failed to delete selected items.");
     }
   };
 
@@ -324,7 +324,7 @@ export const Mainpage = () => {
             <IoIosArrowForward />
           </button>
         </div>
-        {openAddForm && <Form closeFormpopUp={closeFormpopUp} />}
+        {openAddForm && <Form closeFormpopUp={closeFormpopUp} setAgainGet={setAgainGet} />}
       </div>
     </div>
   );
